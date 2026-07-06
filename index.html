@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Femorra — Product Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--plum:#6E3A47;--plum-d:#572c37;--ink:#1f2733;--bg:#f4f5f7;--card:#fff;--line:#e3e6ea;--muted:#6b7280;--ok:#2e7d5b;--err:#d94b4b;--gold:#C6A15B}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Inter",system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5}
+a{color:var(--plum)}
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+.side{background:var(--ink);color:#cfd4dc;padding:20px 14px;position:sticky;top:0;height:100vh}
+.brand{font-weight:800;font-size:1.25rem;color:#fff;letter-spacing:.02em;padding:6px 10px 18px}
+.brand span{color:var(--gold)}
+.brand small{display:block;font-weight:500;font-size:.62rem;letter-spacing:.28em;color:#8b93a1;margin-top:3px}
+.navb{display:flex;flex-direction:column;gap:2px}
+.navb button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:none;border:none;color:#cfd4dc;padding:11px 12px;border-radius:8px;font-size:.9rem;font-weight:500;cursor:pointer}
+.navb button:hover{background:rgba(255,255,255,.06);color:#fff}
+.navb button.on{background:var(--plum);color:#fff}
+.main{padding:26px 30px;max-width:1080px}
+h1{font-size:1.5rem;font-weight:800;margin-bottom:2px}
+.sub{color:var(--muted);font-size:.86rem;margin-bottom:22px}
+.view{display:none}.view.on{display:block}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:26px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px}
+.stat .n{font-size:1.7rem;font-weight:800}
+.stat .l{color:var(--muted);font-size:.8rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.stat.mom .n{color:#7ba17b}.stat.women .n{color:var(--plum)}.stat.jewel .n{color:var(--gold)}
+.sec{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-bottom:16px}
+.sec h3{font-size:.95rem;font-weight:700;margin-bottom:2px}
+.sec .h{color:var(--muted);font-size:.78rem;margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+label{display:block;font-size:.76rem;font-weight:600;color:#42505f;margin:10px 0 5px}
+label .req{color:var(--err)}
+input,select,textarea{width:100%;padding:9px 11px;border:1.5px solid var(--line);border-radius:8px;font-family:inherit;font-size:.9rem;background:#fff;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--plum)}
+textarea{min-height:90px;resize:vertical}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chips label{margin:0;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border:1.5px solid var(--line);border-radius:999px;cursor:pointer;font-size:.84rem;font-weight:500;color:var(--ink);background:#fff}
+.chips input{display:none;width:auto}
+.chips label.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.check{display:flex;align-items:center;gap:9px;padding:9px 0;font-size:.86rem;font-weight:500}
+.check input{width:17px;height:17px;accent-color:var(--plum)}
+.hint{font-size:.72rem;color:var(--muted);margin-top:4px}
+.drop{border:2px dashed #c9cfd6;border-radius:10px;padding:22px;text-align:center;cursor:pointer;background:#fafbfc;color:var(--muted);font-size:.88rem}
+.drop:hover,.drop.drag{border-color:var(--plum);background:#f6eef1;color:var(--plum)}
+.thumbs{display:flex;flex-wrap:wrap;gap:9px;margin-top:12px}
+.thumb{position:relative;width:84px;height:104px;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#eee}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb .pos{position:absolute;top:3px;left:3px;background:rgba(31,39,51,.8);color:#fff;font-size:.6rem;font-weight:700;padding:1px 6px;border-radius:99px}
+.thumb .tb{position:absolute;bottom:0;left:0;right:0;display:flex;background:rgba(31,39,51,.82)}
+.thumb .tb button{flex:1;background:none;border:none;color:#fff;font-size:.72rem;padding:3px;cursor:pointer}
+.thumb .tb button:hover{background:rgba(255,255,255,.18)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:10px 20px;border:none;border-radius:8px;font-weight:600;font-size:.88rem;cursor:pointer;font-family:inherit}
+.btn-primary{background:var(--plum);color:#fff}
+.btn-primary:hover{background:var(--plum-d)}.btn-primary:disabled{opacity:.5;cursor:wait}
+.btn-ghost{background:#fff;border:1.5px solid var(--line);color:var(--ink)}
+.btn-ghost:hover{border-color:var(--plum);color:var(--plum)}
+.bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden;margin:14px 0;display:none}
+.bar.show{display:block}.bar i{display:block;height:100%;width:0;background:var(--plum);transition:width .2s}
+.formfoot{display:flex;gap:10px;align-items:center;margin-top:6px}
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.toolbar input,.toolbar select{width:auto;min-width:180px}
+table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:.85rem;vertical-align:middle}
+th{background:#fafbfc;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+tr:last-child td{border-bottom:none}
+td img{width:42px;height:52px;object-fit:cover;border-radius:6px;background:#eee}
+.tag{display:inline-block;font-size:.7rem;font-weight:600;padding:2px 9px;border-radius:99px;background:#eef1f4;color:#42505f}
+.tag.active{background:#e4f3ec;color:var(--ok)}.tag.draft{background:#f0ece0;color:#9a8a5e}
+.rowbtns{display:flex;gap:6px}
+.rowbtns button{background:none;border:1px solid var(--line);border-radius:6px;padding:4px 9px;font-size:.76rem;cursor:pointer;color:#42505f}
+.rowbtns button:hover{border-color:var(--plum);color:var(--plum)}
+.rowbtns button.del:hover{border-color:var(--err);color:var(--err)}
+.empty{text-align:center;color:var(--muted);padding:46px}
+.toast{position:fixed;bottom:22px;left:50%;transform:translate(-50%,150%);background:var(--ink);color:#fff;padding:12px 22px;border-radius:99px;font-size:.86rem;transition:.35s;z-index:60;box-shadow:0 12px 30px rgba(0,0,0,.25)}
+.toast.show{transform:translate(-50%,0)}.toast.err{background:var(--err)}
+@media(max-width:820px){.app{grid-template-columns:1fr}.side{position:static;height:auto}.stats{grid-template-columns:1fr 1fr}.grid2,.grid3{grid-template-columns:1fr}.navb{flex-direction:row;flex-wrap:wrap}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">Femorra<span>.</span><small>PRODUCT MANAGER</small></div>
+    <nav class="navb">
+      <button data-tab="dash" class="on">▧ Dashboard</button>
+      <button data-tab="add">＋ Add Product</button>
+      <button data-tab="list">▤ Products</button>
+      <button data-tab="export">⬇ Export CSV</button>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <section id="v-dash" class="view on">
+      <h1>Dashboard</h1>
+      <div class="sub">Overview of products saved for Femorra.</div>
+      <div class="stats">
+        <div class="stat"><div class="n" id="st-total">0</div><div class="l">Total Products</div></div>
+        <div class="stat mom"><div class="n" id="st-mom">0</div><div class="l">Mom</div></div>
+        <div class="stat women"><div class="n" id="st-women">0</div><div class="l">Women</div></div>
+        <div class="stat jewel"><div class="n" id="st-jewel">0</div><div class="l">Jewellery</div></div>
+      </div>
+      <div class="sec">
+        <h3>Recent products</h3><div class="h">Latest 8 added</div>
+        <div id="recent"></div>
+      </div>
+    </section>
+
+    <section id="v-add" class="view">
+      <h1 id="add-title">Add Product</h1>
+      <div class="sub">Fill the Meesho product details. Leave Description blank to have it written for you at upload.</div>
+      <form id="pform">
+        <input type="hidden" id="editId">
+        <div class="sec">
+          <h3>1 · Internal details</h3><div class="h">For your reference — not shown to customers.</div>
+          <div class="grid2">
+            <div><label>Category <span class="req">*</span></label>
+              <select id="category" required><option value="">Select…</option><option>Mom</option><option>Women</option><option>Jewellery</option></select></div>
+            <div><label>Sub-category <span class="req">*</span></label>
+              <select id="subcategory" required><option value="">Select category first</option></select></div>
+          </div>
+          <div class="grid2">
+            <div><label>Meesho product URL</label><input type="url" id="meesho_url" placeholder="https://www.meesho.com/..."></div>
+            <div><label>Meesho product ID</label><input type="text" id="meesho_id" placeholder="optional"></div>
+          </div>
+        </div>
+
+        <div class="sec">
+          <h3>2 · Basic details</h3><div class="h">Product title + descriptive info.</div>
+          <label>Product title <span class="req">*</span></label>
+          <input type="text" id="title" required placeholder="e.g. Cotton Feeding Kurti with Zip">
+          <div class="grid3">
+            <div><label>Vendor</label><input type="text" id="vendor" placeholder="e.g. Femorra"></div>
+            <div><label>Brand</label><input type="text" id="brand" placeholder="optional"></div>
+            <div><label>Product type</label><input type="text" id="product_type" placeholder="e.g. Feeding Kurti"></div>
+          </div>
+          <label>Tags <span style="font-weight:400;color:var(--muted)">(comma separated)</span></label>
+          <input type="text" id="tags" placeholder="e.g. cotton, feeding, new">
+          <label>Description</label>
+          <textarea id="description" placeholder="Paste or leave blank — we can write a clean one at upload."></textarea>
+        </div>
+
+        <div class="sec">
+          <h3>3 · Pricing</h3><div class="h">All in ₹ INR.</div>
+          <div class="grid3">
+            <div><label>Selling price <span class="req">*</span></label><input type="number" id="price" required min="0" step="0.01" placeholder="799"></div>
+            <div><label>Compare-at price</label><input type="number" id="compare_at" min="0" step="0.01" placeholder="1499"></div>
+            <div><label>Cost per item</label><input type="number" id="cost" min="0" step="0.01" placeholder="your Meesho cost"></div>
+          </div>
+        </div>
+
+        <div class="sec">
+          <h3>4 · Inventory</h3>
+          <div class="grid3">
+            <div><label>SKU</label><input type="text" id="sku" placeholder="e.g. FEM-FK-001"></div>
+            <div><label>Barcode</label><input type="text" id="barcode" placeholder="optional"></div>
+            <div><label>Inventory quantity</label><input type="number" id="inventory_qty" min="0" value="25"></div>
+          </div>
+          <label class="check"><input type="checkbox" id="track_inventory" checked> Track inventory</label>
+          <label class="check"><input type="checkbox" id="continue_selling"> Continue selling when out of stock</label>
+        </div>
+
+        <div class="sec">
+          <h3>5 · Variants</h3><div class="h">Sizes &amp; colours become Shopify variants.</div>
+          <label>Sizes</label>
+          <div class="chips" id="sizes">
+            <label><input type="checkbox" value="XS">XS</label>
+            <label><input type="checkbox" value="S">S</label>
+            <label><input type="checkbox" value="M">M</label>
+            <label><input type="checkbox" value="L">L</label>
+            <label><input type="checkbox" value="XL">XL</label>
+            <label><input type="checkbox" value="XXL">XXL</label>
+            <label><input type="checkbox" value="3XL">3XL</label>
+            <label><input type="checkbox" value="Free Size">Free Size</label>
+          </div>
+          <div class="grid2">
+            <div><label>Colours <span style="font-weight:400;color:var(--muted)">(comma separated)</span></label><input type="text" id="colors" placeholder="e.g. Maroon, Navy, Green"></div>
+            <div><label>Material</label><input type="text" id="material" placeholder="e.g. Cotton"></div>
+          </div>
+        </div>
+
+        <div class="sec">
+          <h3>6 · Shipping</h3>
+          <div class="grid2">
+            <div><label>Weight</label><input type="number" id="weight" min="0" step="0.01" placeholder="e.g. 400"></div>
+            <div><label>Weight unit</label><select id="weight_unit"><option value="g">grams (g)</option><option value="kg">kilograms (kg)</option></select></div>
+          </div>
+        </div>
+
+        <div class="sec">
+          <h3>7 · SEO</h3><div class="h">Leave blank to auto-generate from the title.</div>
+          <label>SEO title</label><input type="text" id="seo_title" placeholder="optional">
+          <label>SEO description</label><textarea id="seo_description" placeholder="optional" style="min-height:60px"></textarea>
+          <label>Handle (URL)</label><input type="text" id="handle" placeholder="auto from title if blank">
+        </div>
+
+        <div class="sec">
+          <h3>8 · Images <span class="req">*</span></h3><div class="h">First image = main. Drag to add; use ◀ ▶ to reorder.</div>
+          <div class="drop" id="imgDrop">📷 Click or drop images here (JPG / PNG / WEBP)</div>
+          <input type="file" id="imgInput" accept="image/*" multiple hidden>
+          <div class="thumbs" id="imgThumbs"></div>
+        </div>
+
+        <div class="bar" id="bar"><i></i></div>
+        <div class="formfoot">
+          <button type="submit" class="btn btn-primary" id="saveBtn">Save product</button>
+          <button type="button" class="btn btn-ghost" id="cancelEdit" style="display:none">Cancel edit</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="v-list" class="view">
+      <h1>Products</h1>
+      <div class="sub">All saved products. Edit, duplicate or delete. Tick rows to export selected.</div>
+      <div class="toolbar">
+        <input type="text" id="search" placeholder="Search by title…">
+        <select id="filterCat"><option value="">All categories</option><option>Mom</option><option>Women</option><option>Jewellery</option></select>
+        <span class="hint" id="listCount" style="margin-left:auto"></span>
+      </div>
+      <div id="listWrap"></div>
+    </section>
+
+    <section id="v-export" class="view">
+      <h1>Export to Shopify</h1>
+      <div class="sub">Generate a Shopify-compatible CSV — import directly via Shopify Admin → Products → Import.</div>
+      <div class="sec">
+        <h3>Shopify product CSV</h3>
+        <div class="h">Images use their public URLs. Default fields (Published, Status, Fulfilment, etc.) fill automatically. Sizes × colours become variants.</div>
+        <p style="margin:8px 0 16px"><b id="exportCount">0</b> products ready to export.</p>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" id="exportAll">⬇ Export all as Shopify CSV</button>
+          <button class="btn btn-ghost" id="exportSelected">⬇ Export selected only</button>
+        </div>
+      </div>
+      <div class="sec">
+        <h3>How to import into Shopify</h3>
+        <div class="h" style="line-height:1.9">
+          1. Download the CSV here.<br>
+          2. Shopify Admin → <b>Products → Import → Add file</b> → choose the CSV → <b>Upload and preview</b> → <b>Import products</b>.<br>
+          3. Images pull in automatically from their URLs (give it a few minutes).<br>
+          4. Review, then assign each product's collection &amp; publish.
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const SB_URL='https://pemslcyrbyapcicaekfp.supabase.co';
+const SB_KEY='sb_publishable_040icaFvG5aghhLCW9aNpQ_SB5lTk5t';
+const sb=window.supabase.createClient(SB_URL,SB_KEY);
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const CATS={Mom:['Maternity Dresses','Feeding Dresses','Nursing Bras','Maternity Nightwear'],Women:['Kurtis','Kurta Sets'],Jewellery:['Earrings','Necklaces','Bangles','Rings']};
+let imgs=[],all=[],selected=new Set();
+
+function toast(m,err){const t=$('#toast');t.textContent=m;t.className='toast show'+(err?' err':'');clearTimeout(t._);t._=setTimeout(()=>t.className='toast',err?4500:2500);}
+function slug(s){return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60)||'product';}
+function safe(n){return n.replace(/[^a-zA-Z0-9.]+/g,'-');}
+function num(v){return v===''||v==null?null:Number(v);}
+function esc(s){return (s||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));}
+
+$$('.navb button').forEach(b=>b.onclick=()=>{
+  $$('.navb button').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+  $$('.view').forEach(v=>v.classList.remove('on'));$('#v-'+b.dataset.tab).classList.add('on');
+  if(['dash','list','export'].includes(b.dataset.tab))load();
+});
+
+$('#category').onchange=()=>{
+  const c=$('#category').value,sub=$('#subcategory');
+  sub.innerHTML='<option value="">Select…</option>'+((CATS[c]||[]).map(s=>`<option>${s}</option>`).join(''));
+};
+
+$('#sizes').addEventListener('change',e=>{const l=e.target.closest('label');if(l)l.classList.toggle('on',e.target.checked);});
+
+const imgDrop=$('#imgDrop'),imgInput=$('#imgInput');
+imgDrop.onclick=()=>imgInput.click();
+imgInput.onchange=()=>{[...imgInput.files].forEach(f=>imgs.push({file:f}));imgInput.value='';renderImgs();};
+['dragover','dragleave','drop'].forEach(ev=>imgDrop.addEventListener(ev,e=>{e.preventDefault();imgDrop.classList.toggle('drag',ev==='dragover');if(ev==='drop')[...e.dataTransfer.files].filter(f=>f.type.startsWith('image')).forEach(f=>imgs.push({file:f})),renderImgs();}));
+function renderImgs(){
+  $('#imgThumbs').innerHTML=imgs.map((im,i)=>{
+    const src=im.url||URL.createObjectURL(im.file);
+    return `<div class="thumb"><span class="pos">${i+1}</span><img src="${src}"><div class="tb"><button type="button" data-mv="${i}" data-d="-1">◀</button><button type="button" data-rm="${i}">✕</button><button type="button" data-mv="${i}" data-d="1">▶</button></div></div>`;
+  }).join('');
+}
+$('#imgThumbs').onclick=e=>{
+  const rm=e.target.closest('[data-rm]'),mv=e.target.closest('[data-mv]');
+  if(rm){imgs.splice(+rm.dataset.rm,1);renderImgs();}
+  else if(mv){const i=+mv.dataset.mv,j=i+(+mv.dataset.d);if(j>=0&&j<imgs.length){[imgs[i],imgs[j]]=[imgs[j],imgs[i]];renderImgs();}}
+};
+
+async function uploadFile(file,path){
+  const {error}=await sb.storage.from('product-media').upload(path,file,{upsert:false,contentType:file.type});
+  if(error) throw error;
+  return sb.storage.from('product-media').getPublicUrl(path).data.publicUrl;
+}
+
+$('#pform').addEventListener('submit',async e=>{
+  e.preventDefault();
+  if(!$('#category').value)return toast('Pick a category',1);
+  if(!$('#subcategory').value)return toast('Pick a sub-category',1);
+  if(!$('#title').value.trim())return toast('Enter a title',1);
+  if(!$('#price').value)return toast('Enter a price',1);
+  if(!imgs.length)return toast('Add at least one image',1);
+  const btn=$('#saveBtn'),bar=$('#bar'),fill=bar.querySelector('i');
+  btn.disabled=true;btn.textContent='Saving…';bar.classList.add('show');fill.style.width='6%';
+  try{
+    const base=slug($('#title').value)+'-'+Date.now().toString(36);
+    const total=imgs.filter(i=>i.file).length||1;let done=0;const urls=[];
+    for(let i=0;i<imgs.length;i++){
+      if(imgs[i].url){urls.push(imgs[i].url);continue;}
+      urls.push(await uploadFile(imgs[i].file,`femorra/${base}/${i+1}-${safe(imgs[i].file.name)}`));
+      done++;fill.style.width=(done/total*88+6)+'%';
+    }
+    const rec={
+      category:$('#category').value,subcategory:$('#subcategory').value,
+      meesho_url:$('#meesho_url').value.trim()||null,meesho_id:$('#meesho_id').value.trim()||null,
+      title:$('#title').value.trim(),vendor:$('#vendor').value.trim()||null,brand:$('#brand').value.trim()||null,
+      product_type:$('#product_type').value.trim()||null,tags:$('#tags').value.trim()||null,description:$('#description').value.trim()||null,
+      price:num($('#price').value),compare_at:num($('#compare_at').value),cost:num($('#cost').value),
+      sku:$('#sku').value.trim()||null,barcode:$('#barcode').value.trim()||null,inventory_qty:num($('#inventory_qty').value)||0,
+      track_inventory:$('#track_inventory').checked,continue_selling:$('#continue_selling').checked,
+      sizes:$$('#sizes input:checked').map(i=>i.value).join(','),colors:$('#colors').value.trim()||null,material:$('#material').value.trim()||null,
+      weight:num($('#weight').value),weight_unit:$('#weight_unit').value,
+      seo_title:$('#seo_title').value.trim()||null,seo_description:$('#seo_description').value.trim()||null,handle:$('#handle').value.trim()||slug($('#title').value),
+      image_urls:urls,updated_at:new Date().toISOString()
+    };
+    const id=$('#editId').value;let error;
+    if(id){({error}=await sb.from('femorra_products').update(rec).eq('id',id));}
+    else{({error}=await sb.from('femorra_products').insert(rec));}
+    if(error) throw error;
+    fill.style.width='100%';toast(id?'✓ Product updated':'✓ Product saved');
+    resetForm();await load();
+  }catch(err){toast('Error: '+(err.message||err),1);}
+  finally{btn.disabled=false;btn.textContent=$('#editId').value?'Update product':'Save product';setTimeout(()=>{bar.classList.remove('show');fill.style.width='0';},500);}
+});
+
+function resetForm(){
+  $('#pform').reset();$('#editId').value='';imgs=[];renderImgs();
+  $('#subcategory').innerHTML='<option value="">Select category first</option>';
+  $$('#sizes label').forEach(l=>l.classList.remove('on'));
+  $('#add-title').textContent='Add Product';$('#saveBtn').textContent='Save product';$('#cancelEdit').style.display='none';
+}
+$('#cancelEdit').onclick=()=>{resetForm();toast('Edit cancelled');};
+
+async function load(){
+  const {data,error}=await sb.from('femorra_products').select('*').order('created_at',{ascending:false});
+  if(error){toast('Load failed — run femorra-setup.sql first',1);return;}
+  all=data||[];
+  $('#st-total').textContent=all.length;
+  $('#st-mom').textContent=all.filter(p=>p.category==='Mom').length;
+  $('#st-women').textContent=all.filter(p=>p.category==='Women').length;
+  $('#st-jewel').textContent=all.filter(p=>p.category==='Jewellery').length;
+  $('#exportCount').textContent=all.length;
+  $('#recent').innerHTML=all.length?rowsTable(all.slice(0,8),false):'<div class="empty">No products yet.</div>';
+  renderList();
+}
+function rowsTable(rows,withSel){
+  return `<table><thead><tr>${withSel?'<th></th>':''}<th></th><th>Title</th><th>Category</th><th>Sub</th><th>Price</th><th>Status</th>${withSel?'<th>Actions</th>':''}</tr></thead><tbody>${rows.map(p=>{
+    const img=(p.image_urls&&p.image_urls[0])||'';
+    return `<tr>${withSel?`<td><input type="checkbox" class="sel" data-id="${p.id}" ${selected.has(p.id)?'checked':''}></td>`:''}
+    <td>${img?`<img src="${img}">`:''}</td>
+    <td><b>${esc(p.title)}</b></td><td>${p.category||''}</td><td>${p.subcategory||''}</td>
+    <td>₹${p.price??''}${p.compare_at?` <s style="opacity:.5">₹${p.compare_at}</s>`:''}</td>
+    <td><span class="tag ${(p.status||'active').toLowerCase()}">${p.status||'Active'}</span></td>
+    ${withSel?`<td><div class="rowbtns"><button data-edit="${p.id}">Edit</button><button data-dup="${p.id}">Duplicate</button><button class="del" data-del="${p.id}">Delete</button></div></td>`:''}</tr>`;
+  }).join('')}</tbody></table>`;
+}
+function renderList(){
+  const q=($('#search').value||'').toLowerCase(),fc=$('#filterCat').value;
+  const rows=all.filter(p=>(!q||(p.title||'').toLowerCase().includes(q))&&(!fc||p.category===fc));
+  $('#listCount').textContent=rows.length+' shown';
+  $('#listWrap').innerHTML=rows.length?rowsTable(rows,true):'<div class="empty">No matching products.</div>';
+}
+$('#search').oninput=renderList;$('#filterCat').onchange=renderList;
+
+$('#listWrap').onclick=async e=>{
+  const ed=e.target.closest('[data-edit]'),dup=e.target.closest('[data-dup]'),del=e.target.closest('[data-del]'),sel=e.target.closest('.sel');
+  if(sel){sel.checked?selected.add(sel.dataset.id):selected.delete(sel.dataset.id);return;}
+  if(ed)startEdit(all.find(p=>p.id===ed.dataset.edit));
+  else if(dup)duplicate(all.find(p=>p.id===dup.dataset.dup));
+  else if(del){if(confirm('Delete this product? This cannot be undone.'))removeProduct(del.dataset.del);}
+};
+function startEdit(p){
+  if(!p)return;
+  $('#editId').value=p.id;
+  $('#category').value=p.category||'';$('#category').onchange();$('#subcategory').value=p.subcategory||'';
+  ['meesho_url','meesho_id','title','vendor','brand','product_type','tags','description','price','compare_at','cost','sku','barcode','inventory_qty','colors','material','weight','seo_title','seo_description','handle'].forEach(k=>{const el=$('#'+k);if(el)el.value=p[k]??'';});
+  $('#weight_unit').value=p.weight_unit||'g';
+  $('#track_inventory').checked=!!p.track_inventory;$('#continue_selling').checked=!!p.continue_selling;
+  $$('#sizes input').forEach(i=>{i.checked=(p.sizes||'').split(',').includes(i.value);i.closest('label').classList.toggle('on',i.checked);});
+  imgs=(p.image_urls||[]).map(u=>({url:u}));renderImgs();
+  $('#add-title').textContent='Edit Product';$('#saveBtn').textContent='Update product';$('#cancelEdit').style.display='inline-flex';
+  $$('.navb button').forEach(x=>x.classList.remove('on'));document.querySelector('[data-tab="add"]').classList.add('on');
+  $$('.view').forEach(v=>v.classList.remove('on'));$('#v-add').classList.add('on');window.scrollTo(0,0);
+}
+async function duplicate(p){
+  if(!p)return;
+  const {id,created_at,updated_at,...rest}=p;
+  rest.title=(p.title||'')+' (copy)';rest.handle=slug(rest.title);rest.updated_at=new Date().toISOString();
+  const {error}=await sb.from('femorra_products').insert(rest);
+  if(error)return toast('Duplicate failed: '+error.message,1);
+  toast('✓ Duplicated');load();
+}
+async function removeProduct(id){
+  const {error}=await sb.from('femorra_products').delete().eq('id',id);
+  if(error)return toast('Delete failed: '+error.message,1);
+  selected.delete(id);toast('✓ Deleted');load();
+}
+
+const CSV_COLS=["Handle","Title","Body (HTML)","Vendor","Type","Tags","Published","Option1 Name","Option1 Value","Option2 Name","Option2 Value","Option3 Name","Option3 Value","Variant SKU","Variant Grams","Variant Inventory Tracker","Variant Inventory Qty","Variant Inventory Policy","Variant Fulfillment Service","Variant Price","Variant Compare At Price","Variant Requires Shipping","Variant Taxable","Variant Barcode","Image Src","Image Position","Image Alt Text","Gift Card","SEO Title","SEO Description","Google Shopping / Condition","Variant Weight Unit","Cost per item","Status"];
+function cell(v){v=(v==null?'':''+v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;}
+function grams(p){const w=Number(p.weight)||0;return p.weight_unit==='kg'?Math.round(w*1000):Math.round(w);}
+function buildVariants(p){
+  const sizes=(p.sizes||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const colors=(p.colors||'').split(',').map(s=>s.trim()).filter(Boolean);
+  let out=[];
+  if(sizes.length&&colors.length){sizes.forEach(s=>colors.forEach(c=>out.push({o1:s,o2:c})));return{n1:'Size',n2:'Color',v:out};}
+  if(sizes.length){sizes.forEach(s=>out.push({o1:s}));return{n1:'Size',n2:'',v:out};}
+  if(colors.length){colors.forEach(c=>out.push({o1:c}));return{n1:'Color',n2:'',v:out};}
+  return{n1:'Title',n2:'',v:[{o1:'Default Title'}]};
+}
+function productRows(p){
+  const handle=p.handle||slug(p.title);
+  const {n1,n2,v}=buildVariants(p);
+  const imgsArr=p.image_urls||[];const rows=[];
+  v.forEach((vr,vi)=>{
+    const first=vi===0;const skuBase=p.sku||'';
+    const suffix=[vr.o1,vr.o2].filter(x=>x&&x!=='Default Title').join('-');
+    const row={};row["Handle"]=handle;
+    if(first){
+      row["Title"]=p.title;row["Body (HTML)"]=p.description||'';row["Vendor"]=p.vendor||p.brand||'';
+      row["Type"]=p.product_type||p.subcategory||'';row["Tags"]=[p.tags,p.category,p.subcategory,p.brand].filter(Boolean).join(', ');
+      row["Published"]="TRUE";row["Option1 Name"]=n1;if(n2)row["Option2 Name"]=n2;
+      row["Gift Card"]="FALSE";row["SEO Title"]=p.seo_title||p.title;row["SEO Description"]=p.seo_description||'';
+      row["Google Shopping / Condition"]="new";row["Status"]="active";
+    }
+    row["Option1 Value"]=vr.o1||'';if(n2)row["Option2 Value"]=vr.o2||'';
+    row["Variant SKU"]=skuBase?(suffix?skuBase+'-'+suffix:skuBase):'';
+    row["Variant Grams"]=grams(p);
+    row["Variant Inventory Tracker"]=p.track_inventory?"shopify":"";
+    row["Variant Inventory Qty"]=p.inventory_qty??0;
+    row["Variant Inventory Policy"]=p.continue_selling?"continue":"deny";
+    row["Variant Fulfillment Service"]="manual";
+    row["Variant Price"]=p.price??'';row["Variant Compare At Price"]=p.compare_at??'';
+    row["Variant Requires Shipping"]="TRUE";row["Variant Taxable"]="TRUE";row["Variant Barcode"]=p.barcode||'';
+    row["Variant Weight Unit"]=p.weight_unit==='kg'?'kg':'g';row["Cost per item"]=p.cost??'';
+    if(first&&imgsArr[0]){row["Image Src"]=imgsArr[0];row["Image Position"]=1;row["Image Alt Text"]=p.title;}
+    rows.push(row);
+  });
+  for(let i=1;i<imgsArr.length;i++)rows.push({"Handle":handle,"Image Src":imgsArr[i],"Image Position":i+1,"Image Alt Text":p.title});
+  return rows;
+}
+function exportCSV(list){
+  if(!list.length)return toast('Nothing to export',1);
+  const lines=[CSV_COLS.join(',')];
+  list.forEach(p=>productRows(p).forEach(r=>lines.push(CSV_COLS.map(c=>cell(r[c])).join(','))));
+  const blob=new Blob(['﻿'+lines.join('\n')],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='femorra-shopify-products.csv';a.click();
+  toast('✓ CSV downloaded ('+list.length+' products)');
+}
+$('#exportAll').onclick=()=>exportCSV(all);
+$('#exportSelected').onclick=()=>{const s=all.filter(p=>selected.has(p.id));if(!s.length)return toast('Tick products in the Products tab first',1);exportCSV(s);};
+
+load();
+</script>
+</body>
+</html>
