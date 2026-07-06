@@ -43,6 +43,15 @@ textarea{min-height:90px;resize:vertical}
 .chips label{margin:0;display:inline-flex;align-items:center;gap:6px;padding:7px 13px;border:1.5px solid var(--line);border-radius:999px;cursor:pointer;font-size:.84rem;font-weight:500;color:var(--ink);background:#fff}
 .chips input{display:none;width:auto}
 .chips label.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.ms{margin-bottom:4px}
+.ms-chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.ms-chip{padding:5px 12px;border:1.5px solid var(--line);border-radius:999px;font-size:.82rem;cursor:pointer;background:#fff;color:#42505f;user-select:none}
+.ms-chip:hover{border-color:var(--plum)}
+.ms-chip.on{background:var(--plum);color:#fff;border-color:var(--plum)}
+.ms-add{display:flex;gap:6px}
+.ms-add input{flex:1}
+.ms-addbtn{white-space:nowrap;padding:8px 14px;border:1.5px solid var(--line);border-radius:8px;background:#fff;cursor:pointer;font-weight:600;color:#42505f;font-size:.82rem}
+.ms-addbtn:hover{border-color:var(--plum);color:var(--plum)}
 .check{display:flex;align-items:center;gap:9px;padding:9px 0;font-size:.86rem;font-weight:500}
 .check input{width:17px;height:17px;accent-color:var(--plum)}
 .hint{font-size:.72rem;color:var(--muted);margin-top:4px}
@@ -133,13 +142,14 @@ td img{width:42px;height:52px;object-fit:cover;border-radius:6px;background:#eee
           <h3>2 · Basic details</h3><div class="h">Product title + descriptive info.</div>
           <label>Product title <span class="req">*</span></label>
           <input type="text" id="title" required placeholder="e.g. Cotton Feeding Kurti with Zip">
-          <div class="grid3">
-            <div><label>Vendor</label><input type="text" id="vendor" placeholder="e.g. Femorra"></div>
+          <div class="grid2">
+            <div><label>Vendor</label><input type="text" id="vendor" value="Femorra"></div>
             <div><label>Brand</label><input type="text" id="brand" placeholder="optional"></div>
-            <div><label>Product type</label><input type="text" id="product_type" placeholder="e.g. Feeding Kurti"></div>
           </div>
-          <label>Tags <span style="font-weight:400;color:var(--muted)">(comma separated)</span></label>
-          <input type="text" id="tags" placeholder="e.g. cotton, feeding, new">
+          <label>Product type <span style="font-weight:400;color:var(--muted)">(pick category first · select one or more · add your own)</span></label>
+          <div id="ptype-ms" class="ms"></div>
+          <label>Tags <span style="font-weight:400;color:var(--muted)">(suggested from category · click to toggle · add your own)</span></label>
+          <div id="tags-ms" class="ms"></div>
           <label>Description</label>
           <textarea id="description" placeholder="Paste or leave blank — we can write a clean one at upload."></textarea>
         </div>
@@ -166,21 +176,12 @@ td img{width:42px;height:52px;object-fit:cover;border-radius:6px;background:#eee
 
         <div class="sec">
           <h3>5 · Variants</h3><div class="h">Sizes &amp; colours become Shopify variants.</div>
-          <label>Sizes</label>
-          <div class="chips" id="sizes">
-            <label><input type="checkbox" value="XS">XS</label>
-            <label><input type="checkbox" value="S">S</label>
-            <label><input type="checkbox" value="M">M</label>
-            <label><input type="checkbox" value="L">L</label>
-            <label><input type="checkbox" value="XL">XL</label>
-            <label><input type="checkbox" value="XXL">XXL</label>
-            <label><input type="checkbox" value="3XL">3XL</label>
-            <label><input type="checkbox" value="Free Size">Free Size</label>
-          </div>
-          <div class="grid2">
-            <div><label>Colours <span style="font-weight:400;color:var(--muted)">(comma separated)</span></label><input type="text" id="colors" placeholder="e.g. Maroon, Navy, Green"></div>
-            <div><label>Material</label><input type="text" id="material" placeholder="e.g. Cotton"></div>
-          </div>
+          <label>Sizes <span style="font-weight:400;color:var(--muted)" id="sizeHint"></span></label>
+          <div class="chips" id="sizes"></div>
+          <label style="margin-top:14px">Colours <span style="font-weight:400;color:var(--muted)">(select multiple · add your own)</span></label>
+          <div id="colors-ms" class="ms"></div>
+          <label>Material <span style="font-weight:400;color:var(--muted)">(select multiple · add your own)</span></label>
+          <div id="material-ms" class="ms"></div>
         </div>
 
         <div class="sec">
@@ -256,7 +257,42 @@ const SB_KEY='sb_publishable_QJZZyHEArAMYScNDdrUZig_YRNkK1d-';
 const sb=window.supabase.createClient(SB_URL,SB_KEY);
 const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
 const CATS={Mom:['Maternity Dresses','Feeding Dresses','Nursing Bras','Maternity Nightwear'],Women:['Kurtis','Kurta Sets'],Jewellery:['Earrings','Necklaces','Bangles','Rings']};
+const PTYPE_OPTS={
+  Mom:['Maternity Dress','Feeding Dress','Nursing Bra','Maternity Nightwear','Feeding Kurti','Maternity Gown','Feeding Top','Maternity Leggings'],
+  Women:['Kurti','Kurta Set','Anarkali Kurti','A-line Kurti','Straight Kurti','Co-ord Set','Dupatta Set','Gown'],
+  Jewellery:['Earrings','Necklace','Necklace Set','Bangles','Ring','Jhumka','Studs','Pendant Set','Anklet','Maang Tikka']
+};
+const TAG_OPTS=['cotton','rayon','printed','solid','embroidered','daily wear','casual','festive','ethnic','party wear','new arrival','bestseller','plus size','feeding','nursing','maternity','comfortable','soft','seamless','silver','oxidised','traditional','handmade'];
+const TAG_DEFAULTS={
+  'Maternity Dresses':['maternity','dress','comfortable','cotton'],
+  'Feeding Dresses':['feeding','nursing','maternity','dress'],
+  'Nursing Bras':['feeding','nursing','maternity','cotton','seamless'],
+  'Maternity Nightwear':['maternity','nightwear','feeding','cotton'],
+  'Kurtis':['kurti','ethnic','cotton','daily wear'],
+  'Kurta Sets':['kurta set','ethnic','festive','daily wear'],
+  'Earrings':['earrings','silver','oxidised','traditional'],
+  'Necklaces':['necklace','silver','oxidised','traditional'],
+  'Bangles':['bangles','silver','traditional'],
+  'Rings':['ring','silver','adjustable']
+};
+const COLOR_OPTS=['Black','White','Red','Maroon','Wine','Pink','Rani Pink','Peach','Navy','Blue','Sky Blue','Teal','Green','Olive','Mustard','Yellow','Orange','Purple','Grey','Beige','Brown','Gold','Silver','Multicolor'];
+const MATERIAL_OPTS=['Cotton','Rayon','Georgette','Silk','Chiffon','Crepe','Polyester','Viscose','Linen','Modal','Net','Velvet','Denim','Satin','German Silver','Silver','Brass','Alloy','Oxidised','Copper'];
+const STD_SIZES=['XS','S','M','L','XL','XXL','3XL','Free Size'];
+const BRA_SIZES=['28A','30A','32A','34A','36A','38A','40A','30B','32B','34B','36B','38B','40B','32C','34C','36C','38C','40C'];
+const BRA_SUBCATS=['Nursing Bras'];
 let imgs=[],all=[],selected=new Set();
+
+/* ---- multi-select engine (chips + custom add) ---- */
+const MS={};
+function msRender(id){const s=MS[id];s.el.innerHTML=`<div class="ms-chips">${s.options.map(o=>`<span class="ms-chip${s.selected.has(o)?' on':''}" data-v="${(''+o).replace(/"/g,'&quot;')}">${esc(o)}</span>`).join('')||'<span style="font-size:.8rem;color:var(--muted)">Pick a category first…</span>'}</div><div class="ms-add"><input type="text" placeholder="Add custom…"><button type="button" class="ms-addbtn">+ Add</button></div>`;}
+function msInit(id,options,pre){const el=document.getElementById(id);MS[id]={el,options:[...(options||[])],selected:new Set(pre||[])};(pre||[]).forEach(v=>{if(!MS[id].options.includes(v))MS[id].options.push(v);});msRender(id);
+  el.addEventListener('click',e=>{const chip=e.target.closest('.ms-chip'),add=e.target.closest('.ms-addbtn');if(chip){const v=chip.dataset.v;MS[id].selected.has(v)?MS[id].selected.delete(v):MS[id].selected.add(v);chip.classList.toggle('on');}else if(add)msAdd(id);});
+  el.addEventListener('keydown',e=>{if(e.target.matches('.ms-add input')&&e.key==='Enter'){e.preventDefault();msAdd(id);}});}
+function msAdd(id){const inp=MS[id].el.querySelector('.ms-add input');const v=inp.value.trim();if(!v)return;if(!MS[id].options.includes(v))MS[id].options.push(v);MS[id].selected.add(v);inp.value='';msRender(id);}
+function msGet(id){return [...MS[id].selected];}
+function msSet(id,arr){arr=(arr||[]).filter(Boolean);MS[id].selected=new Set(arr);arr.forEach(v=>{if(!MS[id].options.includes(v))MS[id].options.push(v);});msRender(id);}
+function msOptions(id,options){MS[id].options=[...(options||[])];MS[id].selected=new Set();msRender(id);}
+function renderSizes(subcat,pre){const arr=BRA_SUBCATS.includes(subcat)?BRA_SIZES:STD_SIZES;const sel=new Set(pre||[]);$('#sizes').innerHTML=arr.map(s=>`<label class="${sel.has(s)?'on':''}"><input type="checkbox" value="${s}" ${sel.has(s)?'checked':''}>${s}</label>`).join('');$('#sizeHint').textContent=BRA_SUBCATS.includes(subcat)?'— bra band + cup (e.g. 34B)':'';}
 
 function toast(m,err){const t=$('#toast');t.textContent=m;t.className='toast show'+(err?' err':'');clearTimeout(t._);t._=setTimeout(()=>t.className='toast',err?4500:2500);}
 function slug(s){return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60)||'product';}
@@ -273,9 +309,18 @@ $$('.navb button').forEach(b=>b.onclick=()=>{
 $('#category').onchange=()=>{
   const c=$('#category').value,sub=$('#subcategory');
   sub.innerHTML='<option value="">Select…</option>'+((CATS[c]||[]).map(s=>`<option>${s}</option>`).join(''));
+  msOptions('ptype-ms',PTYPE_OPTS[c]||[]);
+  renderSizes('');
+};
+$('#subcategory').onchange=()=>{
+  const sc=$('#subcategory').value;
+  renderSizes(sc);
+  if(!$('#editId').value) msSet('tags-ms', TAG_DEFAULTS[sc]||[]);
 };
 
 $('#sizes').addEventListener('change',e=>{const l=e.target.closest('label');if(l)l.classList.toggle('on',e.target.checked);});
+
+msInit('ptype-ms',[]);msInit('tags-ms',TAG_OPTS);msInit('colors-ms',COLOR_OPTS);msInit('material-ms',MATERIAL_OPTS);renderSizes('');
 
 const imgDrop=$('#imgDrop'),imgInput=$('#imgInput');
 imgDrop.onclick=()=>imgInput.click();
@@ -320,11 +365,11 @@ $('#pform').addEventListener('submit',async e=>{
       category:$('#category').value,subcategory:$('#subcategory').value,
       meesho_url:$('#meesho_url').value.trim()||null,meesho_id:$('#meesho_id').value.trim()||null,
       title:$('#title').value.trim(),vendor:$('#vendor').value.trim()||null,brand:$('#brand').value.trim()||null,
-      product_type:$('#product_type').value.trim()||null,tags:$('#tags').value.trim()||null,description:$('#description').value.trim()||null,
+      product_type:msGet('ptype-ms').join(', ')||null,tags:msGet('tags-ms').join(', ')||null,description:$('#description').value.trim()||null,
       price:num($('#price').value),compare_at:num($('#compare_at').value),cost:num($('#cost').value),
       sku:$('#sku').value.trim()||null,barcode:$('#barcode').value.trim()||null,inventory_qty:num($('#inventory_qty').value)||0,
       track_inventory:$('#track_inventory').checked,continue_selling:$('#continue_selling').checked,
-      sizes:$$('#sizes input:checked').map(i=>i.value).join(','),colors:$('#colors').value.trim()||null,material:$('#material').value.trim()||null,
+      sizes:$$('#sizes input:checked').map(i=>i.value).join(','),colors:msGet('colors-ms').join(',')||null,material:msGet('material-ms').join(', ')||null,
       weight:num($('#weight').value),weight_unit:$('#weight_unit').value,
       seo_title:$('#seo_title').value.trim()||null,seo_description:$('#seo_description').value.trim()||null,handle:$('#handle').value.trim()||slug($('#title').value),
       image_urls:urls,updated_at:new Date().toISOString()
@@ -342,7 +387,7 @@ $('#pform').addEventListener('submit',async e=>{
 function resetForm(){
   $('#pform').reset();$('#editId').value='';imgs=[];renderImgs();
   $('#subcategory').innerHTML='<option value="">Select category first</option>';
-  $$('#sizes label').forEach(l=>l.classList.remove('on'));
+  msOptions('ptype-ms',[]);msOptions('tags-ms',TAG_OPTS);msOptions('colors-ms',COLOR_OPTS);msOptions('material-ms',MATERIAL_OPTS);renderSizes('');
   $('#add-title').textContent='Add Product';$('#saveBtn').textContent='Save product';$('#cancelEdit').style.display='none';
 }
 $('#cancelEdit').onclick=()=>{resetForm();toast('Edit cancelled');};
@@ -389,10 +434,12 @@ function startEdit(p){
   if(!p)return;
   $('#editId').value=p.id;
   $('#category').value=p.category||'';$('#category').onchange();$('#subcategory').value=p.subcategory||'';
-  ['meesho_url','meesho_id','title','vendor','brand','product_type','tags','description','price','compare_at','cost','sku','barcode','inventory_qty','colors','material','weight','seo_title','seo_description','handle'].forEach(k=>{const el=$('#'+k);if(el)el.value=p[k]??'';});
+  ['meesho_url','meesho_id','title','vendor','brand','description','price','compare_at','cost','sku','barcode','inventory_qty','weight','seo_title','seo_description','handle'].forEach(k=>{const el=$('#'+k);if(el)el.value=p[k]??'';});
   $('#weight_unit').value=p.weight_unit||'g';
   $('#track_inventory').checked=!!p.track_inventory;$('#continue_selling').checked=!!p.continue_selling;
-  $$('#sizes input').forEach(i=>{i.checked=(p.sizes||'').split(',').includes(i.value);i.closest('label').classList.toggle('on',i.checked);});
+  const spl=v=>(v||'').split(',').map(s=>s.trim()).filter(Boolean);
+  msSet('ptype-ms',spl(p.product_type));msSet('tags-ms',spl(p.tags));msSet('colors-ms',spl(p.colors));msSet('material-ms',spl(p.material));
+  renderSizes(p.subcategory,spl(p.sizes));
   imgs=(p.image_urls||[]).map(u=>({url:u}));renderImgs();
   $('#add-title').textContent='Edit Product';$('#saveBtn').textContent='Update product';$('#cancelEdit').style.display='inline-flex';
   $$('.navb button').forEach(x=>x.classList.remove('on'));document.querySelector('[data-tab="add"]').classList.add('on');
@@ -434,7 +481,7 @@ function productRows(p){
     const row={};row["Handle"]=handle;
     if(first){
       row["Title"]=p.title;row["Body (HTML)"]=p.description||'';row["Vendor"]=p.vendor||p.brand||'';
-      row["Type"]=p.product_type||p.subcategory||'';row["Tags"]=[p.tags,p.category,p.subcategory,p.brand].filter(Boolean).join(', ');
+      row["Type"]=p.product_type||p.subcategory||'';row["Tags"]=[p.tags,p.category,p.subcategory,p.brand,p.material].filter(Boolean).join(', ');
       row["Published"]="TRUE";row["Option1 Name"]=n1;if(n2)row["Option2 Name"]=n2;
       row["Gift Card"]="FALSE";row["SEO Title"]=p.seo_title||p.title;row["SEO Description"]=p.seo_description||'';
       row["Google Shopping / Condition"]="new";row["Status"]="active";
