@@ -79,6 +79,8 @@ th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font
 th{background:#fafbfc;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
 tr:last-child td{border-bottom:none}
 td img{width:42px;height:52px;object-fit:cover;border-radius:6px;background:#eee}
+.rowimgs{display:flex;gap:4px;flex-wrap:wrap;max-width:200px}
+.rowimgs img{width:34px;height:42px;object-fit:cover;border-radius:5px;background:#eee}
 .tag{display:inline-block;font-size:.7rem;font-weight:600;padding:2px 9px;border-radius:99px;background:#eef1f4;color:#42505f}
 .tag.active{background:#e4f3ec;color:var(--ok)}.tag.draft{background:#f0ece0;color:#9a8a5e}
 .rowbtns{display:flex;gap:6px}
@@ -295,7 +297,7 @@ function msOptions(id,options){MS[id].options=[...(options||[])];MS[id].selected
 function renderSizes(subcat,pre){const arr=BRA_SUBCATS.includes(subcat)?BRA_SIZES:STD_SIZES;const sel=new Set(pre||[]);$('#sizes').innerHTML=arr.map(s=>`<label class="${sel.has(s)?'on':''}"><input type="checkbox" value="${s}" ${sel.has(s)?'checked':''}>${s}</label>`).join('');$('#sizeHint').textContent=BRA_SUBCATS.includes(subcat)?'— bra band + cup (e.g. 34B)':'';}
 
 function toast(m,err){const t=$('#toast');t.textContent=m;t.className='toast show'+(err?' err':'');clearTimeout(t._);t._=setTimeout(()=>t.className='toast',err?4500:2500);}
-function slug(s){return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60)||'product';}
+function slug(s){return (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,60).replace(/-+$/,'')||'product';}
 function safe(n){return n.replace(/[^a-zA-Z0-9.]+/g,'-');}
 function num(v){return v===''||v==null?null:Number(v);}
 function esc(s){return (s||'').replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));}
@@ -338,11 +340,24 @@ $('#imgThumbs').onclick=e=>{
   else if(mv){const i=+mv.dataset.mv,j=i+(+mv.dataset.d);if(j>=0&&j<imgs.length){[imgs[i],imgs[j]]=[imgs[j],imgs[i]];renderImgs();}}
 };
 
-async function uploadFile(file,path){
-  const {error}=await sb.storage.from('product-media').upload(path,file,{upsert:false,contentType:file.type});
+async function uploadFile(file,path,type){
+  const {error}=await sb.storage.from('product-media').upload(path,file,{upsert:false,contentType:type||file.type||'image/jpeg'});
   if(error) throw error;
   return sb.storage.from('product-media').getPublicUrl(path).data.publicUrl;
 }
+/* Convert any image (incl. Meesho .avif/.webp) to JPG so Shopify can import it */
+async function processImg(file){
+  try{
+    const bmp=await createImageBitmap(file);
+    const c=document.createElement('canvas');c.width=bmp.width;c.height=bmp.height;
+    const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(bmp,0,0);
+    const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',0.88));
+    if(blob&&blob.size) return {blob,ext:'jpg',type:'image/jpeg'};
+  }catch(e){}
+  return {blob:file,ext:(file.name.split('.').pop()||'jpg').toLowerCase(),type:file.type||'image/jpeg'};
+}
+/* Plain text (with line breaks) -> safe single-line HTML for Shopify Body */
+function toHtml(t){if(!t)return '';return (''+t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\r\n|\r|\n/g,'<br>');}
 
 $('#pform').addEventListener('submit',async e=>{
   e.preventDefault();
@@ -358,7 +373,8 @@ $('#pform').addEventListener('submit',async e=>{
     const total=imgs.filter(i=>i.file).length||1;let done=0;const urls=[];
     for(let i=0;i<imgs.length;i++){
       if(imgs[i].url){urls.push(imgs[i].url);continue;}
-      urls.push(await uploadFile(imgs[i].file,`femorra/${base}/${i+1}-${safe(imgs[i].file.name)}`));
+      const pr=await processImg(imgs[i].file);
+      urls.push(await uploadFile(pr.blob,`femorra/${base}/${i+1}-img.${pr.ext}`,pr.type));
       done++;fill.style.width=(done/total*88+6)+'%';
     }
     const rec={
@@ -406,9 +422,9 @@ async function load(){
 }
 function rowsTable(rows,withSel){
   return `<table><thead><tr>${withSel?'<th></th>':''}<th></th><th>Title</th><th>Category</th><th>Sub</th><th>Price</th><th>Status</th>${withSel?'<th>Actions</th>':''}</tr></thead><tbody>${rows.map(p=>{
-    const img=(p.image_urls&&p.image_urls[0])||'';
+    const imgsArr=p.image_urls||[];
     return `<tr>${withSel?`<td><input type="checkbox" class="sel" data-id="${p.id}" ${selected.has(p.id)?'checked':''}></td>`:''}
-    <td>${img?`<img src="${img}">`:''}</td>
+    <td><div class="rowimgs">${imgsArr.map(u=>`<img src="${u}" loading="lazy">`).join('')}</div></td>
     <td><b>${esc(p.title)}</b></td><td>${p.category||''}</td><td>${p.subcategory||''}</td>
     <td>₹${p.price??''}${p.compare_at?` <s style="opacity:.5">₹${p.compare_at}</s>`:''}</td>
     <td><span class="tag ${(p.status||'active').toLowerCase()}">${p.status||'Active'}</span></td>
@@ -480,7 +496,7 @@ function productRows(p){
     const suffix=[vr.o1,vr.o2].filter(x=>x&&x!=='Default Title').join('-');
     const row={};row["Handle"]=handle;
     if(first){
-      row["Title"]=p.title;row["Body (HTML)"]=p.description||'';row["Vendor"]=p.vendor||p.brand||'';
+      row["Title"]=p.title;row["Body (HTML)"]=toHtml(p.description);row["Vendor"]=p.vendor||p.brand||'';
       row["Type"]=p.product_type||p.subcategory||'';row["Tags"]=[p.tags,p.category,p.subcategory,p.brand,p.material].filter(Boolean).join(', ');
       row["Published"]="TRUE";row["Option1 Name"]=n1;if(n2)row["Option2 Name"]=n2;
       row["Gift Card"]="FALSE";row["SEO Title"]=p.seo_title||p.title;row["SEO Description"]=p.seo_description||'';
