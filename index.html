@@ -220,7 +220,7 @@ td img{width:42px;height:52px;object-fit:cover;border-radius:6px;background:#eee
       <h1>Products</h1>
       <div class="sub">All saved products. Edit, duplicate or delete. Tick rows to export selected.</div>
       <div class="toolbar">
-        <input type="text" id="search" placeholder="Search by title…">
+        <input type="text" id="search" placeholder="Search by title or SKU…">
         <select id="filterCat"><option value="">All categories</option><option>Mom</option><option>Women</option><option>Jewellery</option></select>
         <span class="hint" id="listCount" style="margin-left:auto"></span>
       </div>
@@ -421,11 +421,13 @@ async function load(){
   renderList();
 }
 function rowsTable(rows,withSel){
-  return `<table><thead><tr>${withSel?'<th></th>':''}<th></th><th>Title</th><th>Category</th><th>Sub</th><th>Price</th><th>Status</th>${withSel?'<th>Actions</th>':''}</tr></thead><tbody>${rows.map(p=>{
+  return `<table><thead><tr>${withSel?'<th></th>':''}<th></th><th>Title</th><th>SKU</th><th>Category</th><th>Sub</th><th>Price</th><th>Status</th>${withSel?'<th>Actions</th>':''}</tr></thead><tbody>${rows.map(p=>{
     const imgsArr=p.image_urls||[];
     return `<tr>${withSel?`<td><input type="checkbox" class="sel" data-id="${p.id}" ${selected.has(p.id)?'checked':''}></td>`:''}
     <td><div class="rowimgs">${imgsArr.map(u=>`<img src="${u}" loading="lazy">`).join('')}</div></td>
-    <td><b>${esc(p.title)}</b></td><td>${p.category||''}</td><td>${p.subcategory||''}</td>
+    <td><b>${esc(p.title)}</b>${p.meesho_url?`<br><a href="${esc(p.meesho_url)}" target="_blank" rel="noopener" style="font-size:.74rem">↗ Open Meesho to fulfil</a>`:''}</td>
+    <td>${p.sku?`<code style="font-size:.8rem;background:#eef1f4;padding:2px 6px;border-radius:5px">${esc(p.sku)}</code>`:'<span style="opacity:.4">—</span>'}</td>
+    <td>${p.category||''}</td><td>${p.subcategory||''}</td>
     <td>₹${p.price??''}${p.compare_at?` <s style="opacity:.5">₹${p.compare_at}</s>`:''}</td>
     <td><span class="tag ${(p.status||'active').toLowerCase()}">${p.status||'Active'}</span></td>
     ${withSel?`<td><div class="rowbtns"><button data-edit="${p.id}">Edit</button><button data-dup="${p.id}">Duplicate</button><button class="del" data-del="${p.id}">Delete</button></div></td>`:''}</tr>`;
@@ -433,7 +435,7 @@ function rowsTable(rows,withSel){
 }
 function renderList(){
   const q=($('#search').value||'').toLowerCase(),fc=$('#filterCat').value;
-  const rows=all.filter(p=>(!q||(p.title||'').toLowerCase().includes(q))&&(!fc||p.category===fc));
+  const rows=all.filter(p=>(!q||(p.title||'').toLowerCase().includes(q)||(p.sku||'').toLowerCase().includes(q))&&(!fc||p.category===fc));
   $('#listCount').textContent=rows.length+' shown';
   $('#listWrap').innerHTML=rows.length?rowsTable(rows,true):'<div class="empty">No matching products.</div>';
 }
